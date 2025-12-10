@@ -1,0 +1,4 @@
+__pycache__
+.env
+aws_consultation_*.txt
+.venv

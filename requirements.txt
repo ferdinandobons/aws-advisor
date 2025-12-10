@@ -1,0 +1,10 @@
+# Core dependencies
+strands-agents
+strands-agents-tools
+mcp
+
+# Utilities
+python-dotenv
+
+# MCP server runner
+uvenv
