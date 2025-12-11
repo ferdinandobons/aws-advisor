@@ -22,11 +22,11 @@ import time
 import argparse
 from pathlib import Path
 from typing import List, Dict, Optional
+import logging
 
 from mcp import stdio_client, StdioServerParameters
 from strands.tools.mcp import MCPClient
 from strands.models.ollama import OllamaModel
-
 from agents.aws_consultant import AWSConsultant
 from agents.config import (
     get_mcp_servers_with_profile,
@@ -36,6 +36,14 @@ from agents.config import (
     OLLAMA_TEMPERATURE,
     OLLAMA_KEEP_ALIVE
 )
+
+# Set up basic logging configuration
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
 
 
 class MCPClientManager:
@@ -364,21 +372,17 @@ Examples:
             
             print("   Loading AWS Pricing tools...")
             pricing_tools = pricing_mcp.list_tools()
-            
-            # Combine all tools
-            all_tools = (
-                documentation_tools +
-                terraform_tools +
-                cdk_tools +
-                pricing_tools
-            )
+
+            all_tools = [documentation_tools, terraform_tools, cdk_tools, pricing_tools]
             
             print(f"\n✅ Connected successfully!")
             print(f"   • AWS Documentation: {len(documentation_tools)} tools")
             print(f"   • Terraform: {len(terraform_tools)} tools")
             print(f"   • CDK: {len(cdk_tools)} tools")
             print(f"   • AWS Pricing: {len(pricing_tools)} tools")
-            print(f"   • Total: {len(all_tools)} tools available\n")
+            total_count = (len(documentation_tools) + len(terraform_tools) + 
+                          len(cdk_tools) + len(pricing_tools))
+            print(f"   • Total: {total_count} tools available\n")
             
             # Create the AWS consultant with the appropriate model
             consultant = AWSConsultant(all_tools, model=model_instance)

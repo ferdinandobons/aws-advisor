@@ -1,5 +1,6 @@
 # Core dependencies
 strands-agents
+strands-agents-builder
 strands-agents-tools
 mcp
 ollama
