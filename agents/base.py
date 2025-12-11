@@ -1,18 +1,16 @@
 """
 Base agent class for AWS Infrastructure Advisor.
 
-Provides base classes for creating agents with MCP tools using either
-Anthropic (Claude via Bedrock) or Ollama (local models).
+Provides a simple base class for creating Claude-based agents with MCP tools.
 """
 
 from typing import Optional, List, Any
 from strands import Agent
-from strands.models.ollama import OllamaModel
 
 
 class AWSConsultantAgent:
     """
-    AWS Consultant Agent powered by Claude via AWS Bedrock or Ollama with MCP tools.
+    AWS Consultant Agent powered by Claude via AWS Bedrock with MCP tools.
     
     This agent acts as a general AWS consultant that can:
     - Answer AWS-related questions using official documentation
@@ -20,22 +18,17 @@ class AWSConsultantAgent:
     - Estimate costs
     - Provide architecture guidance
     
-    Supports both Anthropic (Claude via Bedrock) and Ollama (local models).
+    Uses Claude via AWS Bedrock with access to multiple MCP servers.
     """
     
-    def __init__(
-        self,
-        system_prompt: str,
-        tools: Optional[List] = None,
-        model: Optional[Any] = None
-    ):
+    def __init__(self, system_prompt: str, tools: Optional[List] = None, model: Optional[Any] = None):
         """
         Initialize the AWS consultant agent.
         
         Args:
             system_prompt: The system prompt for the agent
             tools: List of MCP tools available to the agent
-            model: Optional model instance (None for Anthropic, OllamaModel for local)
+            model: Optional model instance (None uses default Claude via AWS Bedrock)
         """
         if not system_prompt or not system_prompt.strip():
             raise ValueError("system_prompt cannot be empty")
@@ -50,14 +43,12 @@ class AWSConsultantAgent:
         Create the underlying Strands agent instance.
         
         Returns:
-            Configured Agent instance with Claude via Bedrock or Ollama and MCP tools
+            Configured Agent instance with Claude via Bedrock and MCP tools
         """
         agent_config = {
             'system_prompt': self.system_prompt,
+            'model': self.model,  # None uses default model (Claude via AWS Bedrock)
         }
-        
-        if self.model is not None:
-            agent_config['model'] = self.model
         
         if self.tools:
             agent_config['tools'] = self.tools
@@ -90,16 +81,8 @@ class AWSConsultantAgent:
     
     def __repr__(self) -> str:
         """Return string representation of the agent."""
-        model_info = (
-            f"model={self.model.__class__.__name__}"
-            if self.model else "model=Anthropic"
-        )
-        return f"AWSConsultantAgent({model_info}, tools={len(self.tools)})"
+        return f"AWSConsultantAgent(tools={len(self.tools)})"
     
     def __str__(self) -> str:
         """Return user-friendly string representation."""
-        model_name = (
-            self.model.__class__.__name__
-            if self.model else "Anthropic"
-        )
-        return f"AWS Consultant Agent ({model_name}) with {len(self.tools)} MCP tool(s)"
+        return f"AWS Consultant Agent with {len(self.tools)} MCP tool(s)"

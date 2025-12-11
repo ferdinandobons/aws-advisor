@@ -1,4 +1,5 @@
 __pycache__
 .env
 aws_consultation_*.txt
+aws_consultation_*.md
 .venv

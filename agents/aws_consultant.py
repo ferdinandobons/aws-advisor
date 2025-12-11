@@ -22,11 +22,8 @@ class AWSConsultant(AWSConsultantAgent):
     - Estimate infrastructure costs
     - Recommend best practices
     
-    Supports both:
-    - Claude via AWS Bedrock (default)
-    - Ollama with local models (when --local flag is used)
-    
-    Has access to 4 MCP servers:
+    It uses Claude via AWS Bedrock (or optionally a local Ollama model) 
+    with access to 4 MCP servers:
     - AWS Documentation
     - Terraform Registry
     - AWS CDK
@@ -39,7 +36,7 @@ class AWSConsultant(AWSConsultantAgent):
         
         Args:
             all_tools: Combined list of tools from all MCP servers
-            model: Optional model instance (None for Anthropic, OllamaModel for local)
+            model: Optional model instance (None uses default Claude via AWS Bedrock)
         """
         super().__init__(
             system_prompt=AWS_CONSULTANT_SYSTEM_PROMPT,

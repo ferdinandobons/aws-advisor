@@ -9,7 +9,7 @@ from typing import Dict
 
 # Ollama Configuration
 OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL_ID = "qwen2.5:3b"
+OLLAMA_MODEL_ID = "qwen3:4b"
 OLLAMA_MAX_TOKENS = 20000
 OLLAMA_TEMPERATURE = 0.1
 OLLAMA_KEEP_ALIVE = "10m"
