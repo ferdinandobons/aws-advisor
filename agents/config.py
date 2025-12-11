@@ -1,11 +1,18 @@
 """
 Configuration module for AWS Infrastructure Advisor.
 
-This module contains MCP server configurations and the system prompt
-for the AWS consultant agent.
+This module contains MCP server configurations, Ollama configuration,
+and the system prompt for the AWS consultant agent.
 """
 
 from typing import Dict
+
+# Ollama Configuration
+OLLAMA_HOST = "http://localhost:11434"
+OLLAMA_MODEL_ID = "qwen2.5:3b"
+OLLAMA_MAX_TOKENS = 20000
+OLLAMA_TEMPERATURE = 0.1
+OLLAMA_KEEP_ALIVE = "10m"
 
 
 def get_mcp_servers_with_profile(aws_profile: str = "default") -> Dict:

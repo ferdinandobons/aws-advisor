@@ -25,9 +25,17 @@ from typing import List, Dict, Optional
 
 from mcp import stdio_client, StdioServerParameters
 from strands.tools.mcp import MCPClient
+from strands.models.ollama import OllamaModel
 
 from agents.aws_consultant import AWSConsultant
-from agents.config import get_mcp_servers_with_profile
+from agents.config import (
+    get_mcp_servers_with_profile,
+    OLLAMA_HOST,
+    OLLAMA_MODEL_ID,
+    OLLAMA_MAX_TOKENS,
+    OLLAMA_TEMPERATURE,
+    OLLAMA_KEEP_ALIVE
+)
 
 
 class MCPClientManager:
@@ -138,11 +146,23 @@ class ConversationManager:
             return None
 
 
-def print_welcome():
-    """Print welcome message."""
+def print_welcome(use_local: bool = False, model_name: str = "Claude"):
+    """
+    Print welcome message.
+    
+    Args:
+        use_local: Whether using local Ollama model
+        model_name: Name of the model being used
+    """
     print("\n" + "=" * 80)
     print("☁️  AWS INFRASTRUCTURE ADVISOR")
     print("=" * 80)
+    
+    if use_local:
+        print(f"\n🖥️  Running with local model: {model_name}")
+    else:
+        print(f"\n☁️  Running with {model_name} via AWS Bedrock")
+    
     print("\nYour AI-powered AWS consultant with access to:")
     print("  📚 Official AWS Documentation")
     print("  🔧 Terraform Registry")
@@ -158,19 +178,21 @@ def print_welcome():
     print("=" * 80 + "\n")
 
 
-def interactive_mode(consultant: AWSConsultant) -> ConversationManager:
+def interactive_mode(consultant: AWSConsultant, use_local: bool = False, model_name: str = "Claude") -> ConversationManager:
     """
     Run the consultant in interactive mode.
     
     Args:
         consultant: The AWS consultant agent
+        use_local: Whether using local Ollama model
+        model_name: Name of the model being used
         
     Returns:
         ConversationManager with the conversation history
     """
     conversation = ConversationManager()
     
-    print_welcome()
+    print_welcome(use_local, model_name)
     
     while True:
         try:
@@ -206,13 +228,15 @@ def interactive_mode(consultant: AWSConsultant) -> ConversationManager:
     return conversation
 
 
-def single_query_mode(consultant: AWSConsultant, query: str) -> str:
+def single_query_mode(consultant: AWSConsultant, query: str, use_local: bool = False, model_name: str = "Claude") -> str:
     """
     Process a single query and return the response.
     
     Args:
         consultant: The AWS consultant agent
         query: The user's query
+        use_local: Whether using local Ollama model
+        model_name: Name of the model being used
         
     Returns:
         The consultant's response
@@ -220,6 +244,12 @@ def single_query_mode(consultant: AWSConsultant, query: str) -> str:
     print("\n" + "=" * 80)
     print("☁️  AWS INFRASTRUCTURE ADVISOR")
     print("=" * 80)
+    
+    if use_local:
+        print(f"🖥️  Using local model: {model_name}")
+    else:
+        print(f"☁️  Using {model_name} via AWS Bedrock")
+    
     print(f"\nQuery: {query}\n")
     print("🤔 Consulting AWS resources...\n")
     
@@ -246,8 +276,10 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py                                          # Interactive mode
+  python main.py                                          # Interactive mode (Claude via Bedrock)
+  python main.py --local                                  # Interactive mode (local Ollama model)
   python main.py "How do I set up a serverless API?"     # Single query mode
+  python main.py --local "Get EC2 pricing"                # Single query with local model
   python main.py --aws-profile prod "Get EC2 pricing"    # With AWS profile
         """
     )
@@ -261,17 +293,53 @@ Examples:
         default=None,
         help="AWS profile to use (default: uses default profile or AWS_PROFILE env var)"
     )
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help=f"Use local Ollama model ({OLLAMA_MODEL_ID}) instead of Claude via Bedrock"
+    )
     
     args = parser.parse_args()
     
     # Determine AWS profile
     aws_profile = args.aws_profile or os.environ.get("AWS_PROFILE", "default")
     
+        # Determine which model to use
+    use_local = args.local
+    model_instance = None
+    model_name = "Claude"
+    
+    if use_local:
+        print(f"\n🖥️  Initializing local Ollama model: {OLLAMA_MODEL_ID}")
+        print(f"   Host: {OLLAMA_HOST}")
+        print(f"   Make sure Ollama is running (ollama serve)\n")
+        
+        try:
+            model_instance = OllamaModel(
+                host=OLLAMA_HOST,
+                model_id=OLLAMA_MODEL_ID,
+                max_tokens=OLLAMA_MAX_TOKENS,
+                temperature=OLLAMA_TEMPERATURE,
+                keep_alive=OLLAMA_KEEP_ALIVE,
+            )
+            model_name = OLLAMA_MODEL_ID
+        except Exception as e:
+            print(f"❌ Error initializing Ollama model: {e}")
+            print("\n⚠️  Troubleshooting:")
+            print("   1. Install Ollama: https://ollama.ai")
+            print(f"   2. Pull the model: ollama pull {OLLAMA_MODEL_ID}")
+            print("   3. Start Ollama: ollama serve")
+            return 1
+    else:
+        print(f"\n☁️  Using Claude via AWS Bedrock")
+        print(f"   Using AWS profile: {aws_profile}\n")
+    
     # Get MCP server configurations with the specified AWS profile
     mcp_servers = get_mcp_servers_with_profile(aws_profile)
     
-    print("\n🔌 Connecting to MCP servers...")
-    print(f"   Using AWS profile: {aws_profile}")
+    print("🔌 Connecting to MCP servers...")
+    if not use_local:
+        print(f"   Using AWS profile: {aws_profile}")
     print("   (This may take a moment on first run...)\n")
     
     try:
@@ -312,14 +380,14 @@ Examples:
             print(f"   • AWS Pricing: {len(pricing_tools)} tools")
             print(f"   • Total: {len(all_tools)} tools available\n")
             
-            # Create the AWS consultant
-            consultant = AWSConsultant(all_tools)
+            # Create the AWS consultant with the appropriate model
+            consultant = AWSConsultant(all_tools, model=model_instance)
             
             # Determine mode: interactive or single query
             if args.query:
                 # Single query mode
                 query = " ".join(args.query)
-                response = single_query_mode(consultant, query)
+                response = single_query_mode(consultant, query, use_local, model_name)
                 
                 # Save to file
                 conversation = ConversationManager()
@@ -329,7 +397,7 @@ Examples:
                     print(f"💾 Consultation saved to: {output_file}\n")
             else:
                 # Interactive mode
-                conversation = interactive_mode(consultant)
+                conversation = interactive_mode(consultant, use_local, model_name)
                 
                 # Save conversation
                 if conversation.history:
@@ -342,9 +410,15 @@ Examples:
     except Exception as e:
         print(f"\n❌ Error: {e}")
         print("\n⚠️  Troubleshooting:")
-        print("   1. Configure AWS credentials: aws configure")
-        print("   2. Install dependencies: pip install -r requirements.txt")
-        print("   3. Check AWS profile is valid")
+        if use_local:
+            print("   1. Install Ollama: https://ollama.ai")
+            print(f"   2. Pull the model: ollama pull {OLLAMA_MODEL_ID}")
+            print("   3. Start Ollama: ollama serve")
+            print("   4. Install dependencies: pip install -r requirements.txt")
+        else:
+            print("   1. Configure AWS credentials: aws configure")
+            print("   2. Install dependencies: pip install -r requirements.txt")
+            print("   3. Check AWS profile is valid")
         return 1
 
 

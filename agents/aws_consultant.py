@@ -5,7 +5,7 @@ This is the main agent that acts as an AWS consultant using
 all available MCP servers.
 """
 
-from typing import List
+from typing import List, Optional, Any
 from agents.base import AWSConsultantAgent
 from agents.config import AWS_CONSULTANT_SYSTEM_PROMPT
 
@@ -22,23 +22,29 @@ class AWSConsultant(AWSConsultantAgent):
     - Estimate infrastructure costs
     - Recommend best practices
     
-    It uses Claude via AWS Bedrock with access to 4 MCP servers:
+    Supports both:
+    - Claude via AWS Bedrock (default)
+    - Ollama with local models (when --local flag is used)
+    
+    Has access to 4 MCP servers:
     - AWS Documentation
     - Terraform Registry
     - AWS CDK
     - AWS Pricing
     """
     
-    def __init__(self, all_tools: List):
+    def __init__(self, all_tools: List, model: Optional[Any] = None):
         """
         Initialize the AWS consultant.
         
         Args:
             all_tools: Combined list of tools from all MCP servers
+            model: Optional model instance (None for Anthropic, OllamaModel for local)
         """
         super().__init__(
             system_prompt=AWS_CONSULTANT_SYSTEM_PROMPT,
-            tools=all_tools
+            tools=all_tools,
+            model=model
         )
     
     def consult(self, user_request: str) -> str:

@@ -4,13 +4,14 @@
 
 ## Overview
 
-Single-agent system powered by Claude (Anthropic) that acts as your personal AWS Solutions Architect.
+Single-agent system powered by Claude (Anthropic) or Ollama (local models) that acts as your personal AWS Solutions Architect.
 
 **Key Features:**
 - 💬 Interactive consultation with an AWS expert
 - 📚 Always references official AWS documentation
 - 🔧 Generates Terraform and CDK code
 - 💰 Real-time AWS pricing data
+- 🖥️ Option to run locally with Ollama models
 
 ## Prerequisites
 
@@ -22,21 +23,39 @@ Configure your AWS credentials and profile. Uses your default AWS profile, or sp
 pip install -r requirements.txt
 ```
 
+### 3. (Optional) For Local Model Support
+To use local Ollama models instead of Claude via AWS Bedrock:
+
+1. Install Ollama: https://ollama.ai
+2. Pull the model: `ollama pull qwen2.5:3b`
+3. Start Ollama: `ollama serve`
+
 ## Quick Start
 
 ### Interactive Mode
 ```bash
+# Using Claude via AWS Bedrock (default)
 python main.py
+
+# Using local Ollama model
+python main.py --local
 ```
 
 ### Single Query
 ```bash
+# Using Claude via AWS Bedrock (default)
 python main.py "How do I set up a serverless REST API?"
+
+# Using local Ollama model
+python main.py --local "How do I set up a serverless REST API?"
 ```
 
 ### With Custom AWS Profile
 ```bash
 python main.py --aws-profile my-profile "Get pricing for EC2 t3.medium"
+
+# Combining local model with custom AWS profile
+python main.py --local --aws-profile my-profile "Get pricing for EC2 t3.medium"
 ```
 
 ## Usage Examples
@@ -44,6 +63,9 @@ python main.py --aws-profile my-profile "Get pricing for EC2 t3.medium"
 **Architecture guidance:**
 ```bash
 python main.py "Best way to build a real-time data pipeline?"
+
+# With local model
+python main.py --local "Best way to build a real-time data pipeline?"
 ```
 
 **Code generation:**
@@ -72,12 +94,16 @@ python main.py "Security best practices for Lambda functions?"
 ## Architecture
 
 ```
-AWSConsultant (Claude Agent)
+AWSConsultant (Claude via Bedrock or Ollama Local Model)
     ├─→ AWS Documentation MCP Server
     ├─→ Terraform MCP Server
     ├─→ AWS CDK MCP Server
     └─→ AWS Pricing MCP Server
 ```
+
+### Model Options
+- **Claude via AWS Bedrock** (default): Cloud-based, requires AWS credentials
+- **Ollama (qwen2.5:3b)** (with `--local` flag): Local inference, no cloud dependencies for the LLM
 
 ## Project Structure
 
@@ -101,7 +127,9 @@ aws-advisor/
 | **Import errors** | `pip install -r requirements.txt` |
 | **MCP server timeout** | First run takes 30-60 seconds |
 | **Connection errors** | Check internet connection |
+| **Ollama model not found** | Run `ollama pull qwen2.5:3b` |
+| **Ollama connection failed** | Start Ollama with `ollama serve` |
 
 ---
 
-**Built with:** Strands Agents • Claude • AWS MCP Servers • Model Context Protocol
+**Built with:** Strands Agents • Claude / Ollama • AWS MCP Servers • Model Context Protocol
