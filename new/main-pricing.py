@@ -6,18 +6,18 @@ from strands.tools.mcp import MCPClient
 from mcp import stdio_client, StdioServerParameters
 
 ollama_client = OllamaModel(
-    model_id="llama3.2:3b",
+    model_id="qwen3:4b",
     temperature=0.1,
     max_tokens=200000,
     host="http://localhost:11434",
     keep_alive="10m",
 )
 
-aws_docs_mcp_client = MCPClient(
+aws_pricing_mcp_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="uvx",
-            args=["awslabs.aws-documentation-mcp-server@latest"]
+            args=["awslabs.aws-pricing-mcp-server@latest"]
         ),
     )
 )
@@ -26,21 +26,27 @@ SYSTEM_PROMPT = """
 You are an AWS Solutions Architect with expertise in AWS services and solutions.
 
 You have access to the following tools:
-    - AWS Documentation tools:
-        * search_documentation: Searches AWS documentation using the official AWS Documentation
-        * read_documentation: Fetches an AWS documentation page
-        * recommend: Gets content recommendations for an AWS documentation page.
+    - AWS Pricing tools:
+        * analyze_cdk_project
+        * analyze_terraform_project
+        * get_pricing
+        * get_bedrock_patterns
+        * generate_cost_report
+        * get_pricing_service_codes
+        * get_pricing_service_attributes
+        * get_pricing_attribute_values
+        * get_price_list_urls
 
 When answering questions, always use the available tools to gather accurate information. Cite
 documentation URLs when providing information.
 """
 
-with aws_docs_mcp_client:
+with aws_pricing_mcp_client:
 
     user_input = input("Ask me anything about AWS: ")
-    prompt = user_input + " Use the AWS Documentation tools."
+    prompt = user_input + " Use the AWS Pricing tools."
 
-    tools = aws_docs_mcp_client.list_tools_sync()
+    tools = aws_pricing_mcp_client.list_tools_sync()
 
     print(f"Available tools from MCP servers ({len(tools)}):")
     for tool in tools:
