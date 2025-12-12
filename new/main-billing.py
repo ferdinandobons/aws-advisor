@@ -22,25 +22,50 @@ aws_docs_mcp_client = MCPClient(
     )
 )
 
+aws_billing_mcp_client = MCPClient(
+    lambda: stdio_client(
+        StdioServerParameters(
+            command="uvx",
+            args=["awslabs.billing-cost-management-mcp-server@latest"],
+            env={
+                "AWS_PROFILE": "default",
+                "AWS_REGION": "eu-central-1",
+                "FASTMCP_LOG_LEVEL": "ERROR"
+            }
+        )
+    )
+)
+
 SYSTEM_PROMPT = """
 You are an AWS Solutions Architect with expertise in AWS services and solutions.
 
 You have access to the following tools:
-    - AWS Documentation tools:
-    * search_documentation: Searches AWS documentation using the official AWS Documentation
-    * read_documentation: Fetches an AWS documentation page
-    * recommend: Gets content recommendations for an AWS documentation page.
+    - AWS Billing tools:
+        * cost-explorer
+        * compute-optimizer
+        * cost-optimization
+        * storage-lens
+        * aws-pricing
+        * bcm-pricing-calc
+        * budgets
+        * cost-anomaly
+        * cost-comparison
+        * free-tier-usage
+        * rec-details
+        * ri-performance
+        * sp-performance
+        * session-sql
 
 When answering questions, always use the available tools to gather accurate information. Cite
 documentation URLs when providing information.
 """
 
-with aws_docs_mcp_client:
+with aws_billing_mcp_client:
 
     user_input = input("Ask me anything about AWS: ")
-    prompt = user_input + " Use the AWS Documentation tools."
+    prompt = user_input + " Use the AWS Billing tools."
 
-    tools = aws_docs_mcp_client.list_tools_sync()
+    tools = aws_billing_mcp_client.list_tools_sync()
 
     print(f"Available tools from MCP servers ({len(tools)}):")
     for tool in tools:
